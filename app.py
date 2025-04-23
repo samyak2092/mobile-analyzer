@@ -387,3 +387,60 @@ with st.expander("Parallel Coordinates Analysis"):
         )
         st.plotly_chart(fig_parallel, use_container_width=True)
        
+
+st.header(" Camera Specs Comparison")
+
+if not filtered_df.empty:
+    # Clean and convert camera specs to numeric values
+    def extract_mp(value):
+        if isinstance(value, str):
+            return float(''.join(filter(str.isdigit, value)))
+        return float(value)
+    
+    camera_df = filtered_df.copy()
+    camera_cols = ['Front Camera', 'Back Camera']
+    
+    # Convert camera specs to megapixels (numeric)
+    for col in camera_cols:
+        if col in camera_df.columns:
+            camera_df[col] = camera_df[col].apply(extract_mp)
+    
+    # Only proceed if conversion worked
+    if all(col in camera_df.columns for col in camera_cols):
+        # Group by brand and calculate mean
+        camera_stats = camera_df.groupby('Company Name')[camera_cols].mean().reset_index()
+        
+        # Create radar chart
+        fig_radar = px.line_polar(
+            camera_stats,
+            r='Back Camera',
+            theta='Company Name',
+            line_close=True,
+            template='plotly_dark',
+            title="Average Back Camera Resolution (MP)",
+            color_discrete_sequence=px.colors.qualitative.Plotly
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
+    else:
+        st.warning("Camera specs data not available")
+        
+        
+
+
+# Add this in a new tab or section
+st.header(" Brand Price Comparison")
+
+# Calculate average price by brand
+avg_prices = filtered_df.groupby('Company Name')[price_col].mean().sort_values()
+
+fig_bar = px.bar(
+    avg_prices,
+    x=avg_prices.index,
+    y=avg_prices.values,
+    color=avg_prices.index,
+    title="Average Price by Brand",
+    labels={'y': 'Average Price (USD)', 'x': ''},
+    template='plotly_dark',
+    color_discrete_sequence=px.colors.qualitative.Dark24
+)
+st.plotly_chart(fig_bar, use_container_width=True)
